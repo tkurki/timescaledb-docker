@@ -2,7 +2,9 @@ ARG PG_VERSION
 ############################
 # Build tools binaries in separate image
 ############################
-FROM golang:alpine AS tools
+# FROM golang:alpine AS tools
+FROM balenalib/armv7hf-alpine-golang as tools
+
 
 ENV TOOLS_VERSION 0.4.1
 
@@ -26,7 +28,7 @@ RUN apk update && apk add --no-cache git \
 # Build old versions in a separate stage
 ############################
 ARG PG_VERSION
-FROM postgres:${PG_VERSION}-alpine AS oldversions
+FROM arm32v6/postgres:${PG_VERSION}-alpine AS oldversions
 ARG PG_VERSION
 ARG OSS_ONLY
 RUN set -ex \
@@ -47,7 +49,6 @@ RUN set -ex \
                 make \
                 cmake \
                 util-linux-dev \
-    \
     && cd /build/timescaledb \
     # This script is a bit ugly, but once all the old versions are buildable
     # on PG11, we can remove the 'if' guard
@@ -57,20 +58,20 @@ RUN set -ex \
 #####
 # Add the latest previous version to the end of the list for each new build
 #####
-RUN OLD_VERSION=0.10.0 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=0.10.1 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=0.11.0 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=0.12.0 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=0.12.1 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.0.0-rc1 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.0.0-rc2 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.0.0-rc3 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.0.0 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.0.1 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.1.0 /build/timescaledb/build_old.sh
-RUN OLD_VERSION=1.1.1 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=0.10.0 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=0.10.1 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=0.11.0 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=0.12.0 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=0.12.1 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.0.0-rc1 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.0.0-rc2 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.0.0-rc3 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.0.0 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.0.1 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.1.0 /build/timescaledb/build_old.sh
+# RUN OLD_VERSION=1.1.1 /build/timescaledb/build_old.sh
 RUN cd /build/timescaledb && git fetch
-RUN OLD_VERSION=1.2.0 /build/timescaledb/build_old.sh
+RUN bash -c "OLD_VERSION=1.2.0 /build/timescaledb/build_old.sh"
 
 # Cleanup
 RUN \
@@ -90,7 +91,7 @@ RUN \
 # Now build image and copy in tools
 ############################
 ARG PG_VERSION
-FROM postgres:${PG_VERSION}-alpine
+FROM arm32v6/postgres:${PG_VERSION}-alpine
 ARG OSS_ONLY
 
 MAINTAINER Timescale https://www.timescale.com
